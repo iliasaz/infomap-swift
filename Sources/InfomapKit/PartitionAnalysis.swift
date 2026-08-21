@@ -416,44 +416,31 @@ public struct StrengthSweep: Sendable {
         /// — the corpus's density margin. `nil` if the sweep ends with
         /// structure; transient mid-sweep one-module points don't count.
         public var collapseStrength: Double?
-        /// True when the input network carried a bipartite declaration that
-        /// the sweep stripped. The strip is methodological: it matches the
-        /// validation experiment's unipartite-prior protocol, keeping
-        /// plateau and collapse points comparable to its baselines. (It
-        /// began as the iliasaz/infomap#1 workaround; the engine itself now
-        /// supports regularized bipartite runs — loop it directly to sweep
-        /// under the bipartite prior.)
-        public var strippedBipartiteDeclaration: Bool
-
         public init(
             points: [Point],
             plateauModuleCount: Int?,
-            collapseStrength: Double?,
-            strippedBipartiteDeclaration: Bool = false
+            collapseStrength: Double?
         ) {
             self.points = points
             self.plateauModuleCount = plateauModuleCount
             self.collapseStrength = collapseStrength
-            self.strippedBipartiteDeclaration = strippedBipartiteDeclaration
         }
     }
 
-    /// Runs the sweep, ascending in strength, on the unipartite view of the
-    /// network: a bipartite declaration is stripped (and recorded in the
-    /// result) so plateau/collapse points stay comparable to the validation
-    /// experiment's unipartite-prior baselines. The engine itself supports
-    /// regularized bipartite runs (iliasaz/infomap#1 is fixed in the
-    /// vendored pin) — call it directly to sweep under the bipartite prior.
+    /// Runs the sweep, ascending in strength, on the network **as given** —
+    /// including a bipartite declaration, which is the map-equation-basins
+    /// experiment's pre-registered method (its §5.4 amendment stripped the
+    /// declaration only because of iliasaz/infomap#1, fixed in the vendored
+    /// pin; the fixed core prices the prior over the bipartite primary
+    /// projection). When comparing against plateau/collapse numbers
+    /// recorded under that amendment's unipartite prior, re-baseline —
+    /// the two priors differ.
     public static func run(
         network: FlowNetwork,
         options: InfomapOptions,
         strengths: [Double] = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.5, 0.65, 0.8, 1.0],
         engine: any InfomapRunning
     ) async throws -> Result {
-        var unipartite = network
-        let stripped = unipartite.bipartiteStartID != nil
-        unipartite.bipartiteStartID = nil
-
         var points: [Point] = []
         for strength in strengths.sorted() {
             // The safe point between runs: a cancelled sweep stops here
@@ -461,7 +448,7 @@ public struct StrengthSweep: Sendable {
             try Task.checkCancellation()
             var swept = options
             swept.regularization = .bayesian(strength: strength)
-            let partition = try await engine.run(unipartite, options: swept)
+            let partition = try await engine.run(network, options: swept)
             points.append(Point(
                 strength: strength,
                 topModules: partition.numTopModules,
@@ -498,8 +485,7 @@ public struct StrengthSweep: Sendable {
         return Result(
             points: points,
             plateauModuleCount: plateauModuleCount,
-            collapseStrength: collapseStrength,
-            strippedBipartiteDeclaration: stripped
+            collapseStrength: collapseStrength
         )
     }
 }

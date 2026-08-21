@@ -15,8 +15,9 @@ func strengthSweepProtocol() async throws {
     for (a, b) in [(0, 1), (1, 2), (2, 0), (2, 3)] { network.addLink(from: a, to: b) }
     for (a, b) in [(3, 4), (4, 5), (5, 3)] { network.addLink(from: a, to: b) }
 
-    // The sweep strips any bipartite declaration itself (iliasaz/infomap#1)
-    // and records that it did.
+    // The sweep runs the network exactly as given — bipartite declarations
+    // included (regularized bipartite runs are supported by the vendored
+    // core; this network is unipartite anyway).
     let result = try await StrengthSweep.run(
         network: network,
         options: InfomapOptions(seed: 42, trials: 20),

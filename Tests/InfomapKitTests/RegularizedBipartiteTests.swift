@@ -69,4 +69,23 @@ import Testing
         let again = try await InfomapEngine().run(network, options: options)
         #expect(partition == again)
     }
+
+    @Test func sweepRunsBipartiteNetworksAsGiven() async throws {
+        // The sweep no longer strips the bipartite declaration — the
+        // map-equation-basins experiment's pre-registered method, possible
+        // now that the pin carries the fix. End-to-end through the real
+        // engine on the bipartite toy: structure survives both strengths
+        // (observed: 2 top modules at 0.3 and 1.0 on macOS and Linux).
+        let fixture = try GoldenPartitionTests.loadFixture("toy-multilevel")
+        let network = GoldenPartitionTests.network(from: fixture)
+        let result = try await StrengthSweep.run(
+            network: network,
+            options: InfomapOptions(seed: 42, trials: 10),
+            strengths: [0.3, 1.0],
+            engine: InfomapEngine.shared
+        )
+        #expect(result.points.map(\.topModules) == [2, 2])
+        #expect(result.plateauModuleCount == 2)
+        #expect(result.collapseStrength == nil)
+    }
 }
