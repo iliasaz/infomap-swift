@@ -36,6 +36,33 @@ The core builds from source inside SwiftPM — `InfomapCore` (vendored sources) 
 
 Golden fixtures regenerate with `python3 scripts/generate_golden_fixtures.py` (needs pip `infomap` 2.15.1, the reference implementation).
 
+## Quick start
+
+```swift
+import InfomapKit
+
+// Two triangles joined by one bridge link — the smallest network with
+// obvious community structure.
+var network = FlowNetwork()
+for (a, b) in [(0, 1), (0, 2), (1, 2), (3, 4), (3, 5), (4, 5), (2, 3)] {
+    network.addLink(from: a, to: b)
+}
+
+let partition = try await InfomapEngine.shared.run(network, options: InfomapOptions())
+print(partition.numTopModules)                       // 2
+print(partition.topModule(of: 0)!)                   // 1
+print(partition.relativeCodelengthSavings)           // ~0.092
+
+let analysis = PartitionAnalysis(partition)
+print(analysis.mapsimDistance(from: 0, to: 5))       // cross-module tunneling cost, bits
+```
+
+Runnable, commented examples live in [`examples/`](examples/) — simple detection, bipartite hypergraph basins with hub-penalty weights, the content map equation (metadata), partition comparison (NMI / membership diff / cover agreement), and the regularization strength sweep:
+
+```sh
+swift run infomap-example
+```
+
 ## Conventions (inherited from mnemosis)
 
 - Swift 6.3+, strict concurrency, **macOS 26+ and Linux (Ubuntu 24.04)**; CI must run both.

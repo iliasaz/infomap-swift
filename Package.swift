@@ -7,7 +7,8 @@ let package = Package(
         .macOS(.v26)
     ],
     products: [
-        .library(name: "InfomapKit", targets: ["InfomapKit"])
+        .library(name: "InfomapKit", targets: ["InfomapKit"]),
+        .executable(name: "infomap-example", targets: ["InfomapExample"]),
     ],
     targets: [
         // The vendored Infomap core (submodule pin of iliasaz/infomap),
@@ -50,6 +51,14 @@ let package = Package(
             name: "InfomapKitTests",
             dependencies: ["InfomapKit"],
             resources: [.copy("Fixtures")],
+            swiftSettings: [.interoperabilityMode(.Cxx)]
+        ),
+        // Runnable usage examples (`swift run infomap-example`) — also live
+        // documentation of what a consumer target needs (the .Cxx setting).
+        .executableTarget(
+            name: "InfomapExample",
+            dependencies: ["InfomapKit"],
+            path: "examples",
             swiftSettings: [.interoperabilityMode(.Cxx)]
         ),
     ],
