@@ -33,10 +33,9 @@ public struct FlowNetwork: Sendable, Hashable {
     /// When non-nil, node IDs `>= bipartiteStartID` are the second (feature)
     /// node type and the engine runs in bipartite mode.
     ///
-    /// - Important: Until the upstream flow-accumulation bug is fixed
-    ///   (iliasaz/infomap#1), the engine must refuse
-    ///   `bipartiteStartID != nil` combined with Bayesian regularization —
-    ///   see ``InfomapError/unsupportedConfiguration(reason:)``.
+    /// Combining a bipartite declaration with Bayesian regularization is
+    /// supported: the vendored pin carries the iliasaz/infomap#1 fix
+    /// (regularized flow computed on the bipartite primary projection).
     public var bipartiteStartID: Int?
 
     /// Optional display names for nodes, used only in diagnostics and exports.

@@ -4,12 +4,14 @@ internal import CxxStdlib
 /// Errors surfaced by the engine. All cases carry human-readable context —
 /// the C++ core's error strings are preserved verbatim in `engineFailure`.
 public enum InfomapError: Error, Sendable, Equatable {
-    /// The option/network combination is known-broken or meaningless.
+    /// The option/network combination is invalid or meaningless (seed or
+    /// trial count out of range, non-positive Markov time, …).
     ///
-    /// The standing case: Bayesian regularization combined with a bipartite
-    /// node-type declaration, which the vendored core (Infomap 2.15.1)
-    /// either aborts on or — worse — answers with a silently degenerate
-    /// partition. Guarded here until fixed upstream: iliasaz/infomap#1.
+    /// Historical note: Bayesian regularization combined with a bipartite
+    /// declaration was refused here while iliasaz/infomap#1 was unfixed;
+    /// the vendored pin carries the fix (`0853262c`, the
+    /// fix/regularized-bipartite-negative-enter-flow branch) and the
+    /// combination is now supported, verified by regression tests.
     case unsupportedConfiguration(reason: String)
     /// The network cannot be run (no links, non-positive or non-finite
     /// weight, node IDs inconsistent with `bipartiteStartID`, …).
@@ -36,9 +38,6 @@ public protocol InfomapRunning: Sendable {
     ///   G2r stability regression meaningful). Across platforms, low trial
     ///   counts can settle in different near-tie optima — pin trials high
     ///   enough for the search to reach the settled optimum.
-    /// - Must throw ``InfomapError/unsupportedConfiguration(reason:)`` for
-    ///   `options.regularization != .off && network.bipartiteStartID != nil`
-    ///   while iliasaz/infomap#1 is unfixed in the vendored pin.
     func run(_ network: FlowNetwork, options: InfomapOptions) async throws -> Partition
 }
 
@@ -68,10 +67,11 @@ public actor InfomapEngine: InfomapRunning {
 
     // MARK: Pre-flight validation
 
-    /// Pre-flight checks: the iliasaz/infomap#1 guard *is* part of the
-    /// contract, and the rest converts conditions the core would answer with
-    /// a cryptic error — or, for a dangling `bipartiteStartID`, silently
-    /// wrong flow — into typed errors before any C++ runs.
+    /// Pre-flight checks: converts conditions the core would answer with a
+    /// cryptic error — or, for a dangling `bipartiteStartID` or dangling
+    /// metadata label, silently wrong results — into typed errors before
+    /// any C++ runs. (The former iliasaz/infomap#1 regularized-bipartite
+    /// guard was lifted with the fixed vendored pin.)
     static func validate(network: FlowNetwork, options: InfomapOptions) throws {
         if network.links.isEmpty {
             throw InfomapError.invalidNetwork(reason: "network has no links")
@@ -100,17 +100,6 @@ public actor InfomapEngine: InfomapRunning {
                     """
                 )
             }
-        }
-        if network.bipartiteStartID != nil, options.regularization != .off {
-            throw InfomapError.unsupportedConfiguration(
-                reason: """
-                Bayesian regularization combined with a bipartite declaration is \
-                engine-bugged in Infomap 2.15.1 (aborts with negative enter flow, or \
-                silently returns a degenerate partition) — see iliasaz/infomap#1. \
-                Either drop the bipartite declaration for regularized runs (unipartite \
-                prior; conservative) or run unregularized.
-                """
-            )
         }
         if options.trials < 1 {
             throw InfomapError.unsupportedConfiguration(reason: "trials must be ≥ 1, got \(options.trials)")

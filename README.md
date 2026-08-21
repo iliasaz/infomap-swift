@@ -15,7 +15,7 @@ Both were validated empirically in `noema/experiments/map-equation-basins/` (202
 
 ## Binding strategy
 
-**Wrap the C++ core via Swift/C++ interoperability** (the MLX-Swift precedent). The Infomap core is C++14, built as a static library from a vendored submodule pin of [iliasaz/infomap](https://github.com/iliasaz/infomap) (our fork — carries the bug documented below until fixed). A thin C++-interop target (`CInfomap`) exposes the minimal engine surface; `InfomapKit` is the Swift API and never leaks C++ types.
+**Wrap the C++ core via Swift/C++ interoperability** (the MLX-Swift precedent). The Infomap core is built as a static library from a vendored submodule pin of [iliasaz/infomap](https://github.com/iliasaz/infomap) — our fork, currently pinned to the `fix/regularized-bipartite-negative-enter-flow` branch, which carries the iliasaz/infomap#1 fix (see below). A thin C++-interop target (`CInfomap`) exposes the minimal engine surface; `InfomapKit` is the Swift API and never leaks C++ types.
 
 Fallback (not plan of record): a C shim layer if C++ interop hits a wall on Linux; reimplementing the two-level objective (Eq. 11) in pure Swift is the last resort.
 
@@ -79,7 +79,7 @@ network.addLink(from: 0, to: 400, weight: 0.42)
 
 var options = InfomapOptions(seed: 42, trials: 50)
 options.flow = .undirected
-options.regularization = .off                            // see Known upstream bug
+options.regularization = .off                            // or .bayesian(strength:)
 
 let partition = try await InfomapEngine.shared.run(network, options: options)
 
@@ -104,9 +104,9 @@ See the doc comments in `Sources/InfomapKit/` — they are the specification, in
 3. **Partition results**: codelength / one-level codelength / relative savings; the full nested module tree with **per-module flow, enter flow, and exit flow at every level** (`p_m^↻`, `q_m↷`, `q_m↶` — required for separatrix costs, `Φ` derivation, and mapsim); per-node leaf/top/at-depth assignment and full path. `Codable`, so a partition can persist as substrate state (SQLite).
 4. **Derived analysis** (pure Swift over the partition — the core does not export these): mapsim and mapsim distance (paper §9.2, asymmetric, defined for unlinked pairs); map-equation centrality (paper §9.1, Eq. 50); NMI + permutation-null z (Gate G5 metric as validated at z = 40 in the experiment); membership diff between two partitions (the G2r alluvial regression artifact); regularization-strength sweep with plateau/collapse-point extraction (the sparse-graph honesty protocol — default-strength savings is *not* a valid gate metric, see the experiment §5.4).
 
-## Known upstream bug (guarded here)
+## Upstream bug, fixed in the vendored pin
 
-Infomap 2.15.1 `--regularized` combined with a bipartite node-type declaration either aborts ("Negative enter flow on a module…") or **silently returns a degenerate over-fragmented partition**. Documented with synthetic repro in [iliasaz/infomap#1](https://github.com/iliasaz/infomap/issues/1). Until fixed in the vendored pin, `InfomapEngine.run` must throw `InfomapError.unsupportedConfiguration` for `regularization != .off && network.bipartiteStartID != nil` rather than forward the call.
+Infomap 2.15.1 `--regularized` combined with a bipartite node-type declaration either aborts ("Negative enter flow on a module…") or **silently returns a degenerate over-fragmented partition** — documented with synthetic repro in [iliasaz/infomap#1](https://github.com/iliasaz/infomap/issues/1). The vendored pin now tracks the fork's `fix/regularized-bipartite-negative-enter-flow` branch (`0853262c`: regularized flow computed on the bipartite primary projection), so the engine's original guard is lifted and the combination is supported. `RegularizedBipartiteTests` pins the two failure modes (abort-class small networks, degeneracy-class larger ones); the pip reference implementation still carries the bug, so that coverage is property-based rather than golden parity. `StrengthSweep` accordingly runs networks **as given**, bipartite declarations included — the map-equation-basins experiment's pre-registered method, which its §5.4 amendment had to abandon because of this bug. One re-baselining caveat: the experiment's *recorded* plateau/collapse numbers were measured under the amendment's unipartite prior, and the fixed core prices the prior over the bipartite primary projection (`λ = ln N_L / N_L`), so sweeps over bipartite networks are not comparable to those recorded values — re-measure before using them as gate baselines.
 
 ## Roadmap
 

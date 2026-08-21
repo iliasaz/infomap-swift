@@ -141,7 +141,10 @@ import Testing
 
     @Test func planted8RegularizedParity() async throws {
         let fixture = try Self.loadFixture("planted8-regularized")
-        #expect(fixture.network.bipartiteStartId == nil, "regularized fixtures must be unipartite (iliasaz/infomap#1)")
+        // The golden regularized fixture stays unipartite: the pip reference
+        // still carries iliasaz/infomap#1, so fork-fixed bipartite behavior
+        // is covered by RegularizedBipartiteTests, not by pip parity.
+        #expect(fixture.network.bipartiteStartId == nil)
         var options = InfomapOptions(seed: 42, trials: 10)
         options.regularization = .bayesian(strength: 0.3)
         let partition = try await InfomapEngine.shared.run(Self.network(from: fixture), options: options)

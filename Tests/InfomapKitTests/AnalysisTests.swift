@@ -167,10 +167,14 @@ import Testing
     struct SweepFixtureEngine: InfomapRunning {
         /// strength → (topModules, leafModules, savings)
         let table: [Double: (Int, Int, Double)]
+        /// The sweep must hand the network through unchanged — including a
+        /// bipartite declaration (the pre-registered method; the former
+        /// iliasaz/infomap#1 strip is gone).
+        var expectedBipartiteStartID: Int? = nil
 
         func run(_ network: FlowNetwork, options: InfomapOptions) async throws -> Partition {
-            guard network.bipartiteStartID == nil else {
-                throw InfomapError.unsupportedConfiguration(reason: "sweep must strip bipartite")
+            guard network.bipartiteStartID == expectedBipartiteStartID else {
+                throw InfomapError.invalidNetwork(reason: "sweep must pass the network through unchanged")
             }
             guard case .bayesian(let strength) = options.regularization,
                   let (top, leaf, savings) = table[strength]
@@ -196,7 +200,7 @@ import Testing
             0.4: (8, 15, 0.32),
             0.5: (1, 1, 0.0),
             0.8: (1, 1, 0.0),
-        ])
+        ], expectedBipartiteStartID: 4)
         let result = try await StrengthSweep.run(
             network: network, options: InfomapOptions(),
             strengths: [0.8, 0.1, 0.2, 0.3, 0.4, 0.5],  // unsorted on purpose
@@ -205,7 +209,6 @@ import Testing
         #expect(result.points.map(\.strength) == [0.1, 0.2, 0.3, 0.4, 0.5, 0.8])
         #expect(result.plateauModuleCount == 8)
         #expect(result.collapseStrength == 0.5)
-        #expect(result.strippedBipartiteDeclaration)
     }
 
     @Test func mapsimDisconnectedComponentsIsZeroNotNaN() {
@@ -289,6 +292,5 @@ import Testing
         )
         #expect(result.collapseStrength == nil)
         #expect(result.plateauModuleCount == 5)
-        #expect(!result.strippedBipartiteDeclaration)
     }
 }

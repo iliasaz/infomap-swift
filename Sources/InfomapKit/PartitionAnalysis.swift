@@ -416,39 +416,31 @@ public struct StrengthSweep: Sendable {
         /// — the corpus's density margin. `nil` if the sweep ends with
         /// structure; transient mid-sweep one-module points don't count.
         public var collapseStrength: Double?
-        /// True when the input network carried a bipartite declaration that
-        /// the sweep stripped (iliasaz/infomap#1 — regularized runs use the
-        /// unipartite prior, conservatively, matching the validation
-        /// experiment's method).
-        public var strippedBipartiteDeclaration: Bool
-
         public init(
             points: [Point],
             plateauModuleCount: Int?,
-            collapseStrength: Double?,
-            strippedBipartiteDeclaration: Bool = false
+            collapseStrength: Double?
         ) {
             self.points = points
             self.plateauModuleCount = plateauModuleCount
             self.collapseStrength = collapseStrength
-            self.strippedBipartiteDeclaration = strippedBipartiteDeclaration
         }
     }
 
-    /// Runs the sweep, ascending in strength. Per iliasaz/infomap#1,
-    /// regularized runs must not carry a bipartite declaration —
-    /// the sweep strips it (unipartite prior, conservative) and records that
-    /// in the result, matching the validation experiment's method.
+    /// Runs the sweep, ascending in strength, on the network **as given** —
+    /// including a bipartite declaration, which is the map-equation-basins
+    /// experiment's pre-registered method (its §5.4 amendment stripped the
+    /// declaration only because of iliasaz/infomap#1, fixed in the vendored
+    /// pin; the fixed core prices the prior over the bipartite primary
+    /// projection). When comparing against plateau/collapse numbers
+    /// recorded under that amendment's unipartite prior, re-baseline —
+    /// the two priors differ.
     public static func run(
         network: FlowNetwork,
         options: InfomapOptions,
         strengths: [Double] = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.5, 0.65, 0.8, 1.0],
         engine: any InfomapRunning
     ) async throws -> Result {
-        var unipartite = network
-        let stripped = unipartite.bipartiteStartID != nil
-        unipartite.bipartiteStartID = nil
-
         var points: [Point] = []
         for strength in strengths.sorted() {
             // The safe point between runs: a cancelled sweep stops here
@@ -456,7 +448,7 @@ public struct StrengthSweep: Sendable {
             try Task.checkCancellation()
             var swept = options
             swept.regularization = .bayesian(strength: strength)
-            let partition = try await engine.run(unipartite, options: swept)
+            let partition = try await engine.run(network, options: swept)
             points.append(Point(
                 strength: strength,
                 topModules: partition.numTopModules,
@@ -493,8 +485,7 @@ public struct StrengthSweep: Sendable {
         return Result(
             points: points,
             plateauModuleCount: plateauModuleCount,
-            collapseStrength: collapseStrength,
-            strippedBipartiteDeclaration: stripped
+            collapseStrength: collapseStrength
         )
     }
 }
