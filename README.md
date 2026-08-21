@@ -2,7 +2,7 @@
 
 Swift bindings for the [Infomap](https://github.com/mapequation/infomap) C++ core — map-equation community detection (Smiljanić et al., arXiv:2311.04036) — plus the partition-analysis utilities the map-equation framework defines but the core does not export (mapsim, map-equation centrality, partition comparison).
 
-**Status: interface specification.** `Sources/InfomapKit/` compiles but nothing is implemented — the types and protocols are the contract, written first so the consumers can be designed against them. Implementation strategy is decided (below); code comes next.
+**Status: implemented.** Engine bindings over the vendored C++ core (roadmap steps 2–3), the partition-analysis layer (step 4), and macOS + Linux CI (step 5) are in place; `swift test` verifies golden parity with the reference Python implementation on both platforms. The doc comments in `Sources/InfomapKit/` remain the interface specification.
 
 ## Why this exists
 
@@ -19,12 +19,30 @@ Both were validated empirically in `noema/experiments/map-equation-basins/` (202
 
 Fallback (not plan of record): a C shim layer if C++ interop hits a wall on Linux; reimplementing the two-level objective (Eq. 11) in pure Swift is the last resort.
 
+## Building
+
+```sh
+git clone --recurse-submodules https://github.com/iliasaz/infomap-swift.git
+# in an existing clone: git submodule update --init
+swift test    # macOS 26+, or Linux via the swift:6.3-noble image
+```
+
+The core builds from source inside SwiftPM — `InfomapCore` (vendored sources) → `CInfomap` (thin C++ bridge; the only target that includes Infomap headers) → `InfomapKit` (Swift API) — no external Infomap installation. SwiftPM requires every dependent of an interop-enabled target to enable interop too, so consumers add to their own target:
+
+```swift
+.target(name: "MyTarget", dependencies: ["InfomapKit"],
+        swiftSettings: [.interoperabilityMode(.Cxx)])
+```
+
+Golden fixtures regenerate with `python3 scripts/generate_golden_fixtures.py` (needs pip `infomap` 2.15.1, the reference implementation).
+
 ## Conventions (inherited from mnemosis)
 
 - Swift 6.3+, strict concurrency, **macOS 26+ and Linux (Ubuntu 24.04)**; CI must run both.
 - The engine call is blocking C++ — it runs off the cooperative pool behind an `async` surface. All result types are `Sendable` value types.
 - No force unwraps; typed errors. `swift-log` for any diagnostics; never `print()`.
-- Tests: Swift Testing (`@Test`/`#expect`). Golden-partition fixtures come from the Python reference implementation on synthetic networks (the planted-8-group generator from the map-equation-basins experiment) so the bindings are verified against the reference, not against themselves.
+- Tests: Swift Testing (`@Test`/`#expect`). Golden-partition fixtures come from the Python reference implementation on synthetic networks (a planted-8-group generator built to the map-equation-basins experiment's method) so the bindings are verified against the reference, not against themselves.
+- Determinism: equal `(network, options)` including seed reproduces bit-identical partitions on a given platform/build. Across platforms, low trial counts can settle in different near-tie local optima (observed on the two-level planted-8 fixture at 10 trials: macOS and Linux picked different flat solutions) — fixtures pin trial counts high enough that every platform reaches the settled optimum.
 
 ## The interface, in one look
 
@@ -65,8 +83,9 @@ Infomap 2.15.1 `--regularized` combined with a bipartite node-type declaration e
 
 ## Roadmap
 
-1. ✅ Interface specification (this commit).
-2. Vendor the fork as a submodule; `CInfomap` C++-interop target; make `swift build` produce the static core on macOS + Linux.
-3. Implement `InfomapEngine` over the core; golden-partition parity tests vs the Python reference.
-4. Implement `PartitionAnalysis` (pure Swift; testable against hand-computed values on the toy network).
-5. CI (macOS 26 runner + `swift:6.3-noble` container), then adopt from mnemosis Phase 5.
+1. ✅ Interface specification.
+2. ✅ Vendored the fork as a submodule (`vendor/infomap`, pin `1434744d` = 2.15.1); `swift build` compiles the core on macOS + Linux.
+3. ✅ `InfomapEngine` over the core; golden-partition parity vs the Python reference (codelengths, flows, and structure to 1e-9 on both platforms).
+4. ✅ `PartitionAnalysis` (pure Swift; validated against hand-computed values).
+5. ✅ CI (macOS 26 runner + `swift:6.3-noble` container).
+6. Adopt from mnemosis Phase 5 / noema P2.3.

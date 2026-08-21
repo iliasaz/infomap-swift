@@ -1,0 +1,351 @@
+{
+ "name": "toy-meta",
+ "flags": "--silent --seed 42 --num-trials 10 --meta-data-rate 1.0",
+ "notes": "node.path is the python tuple exactly as infomap 2.15.1 reports it: 1-based child indices from the root, and for leaf NODES the last component is the leaf's position within its leaf module (drop the last component to get the leaf-module path). modules[] lists every non-leaf tree node at depth >= 1 in depth-first order; the root is excluded. In bipartite runs the engine reports flow 0.0 for feature (entity) nodes.",
+ "network": {
+  "bipartiteStartId": 8,
+  "links": [
+   [
+    0,
+    8,
+    1.0
+   ],
+   [
+    0,
+    9,
+    1.0
+   ],
+   [
+    0,
+    10,
+    1.0
+   ],
+   [
+    0,
+    11,
+    1.0
+   ],
+   [
+    1,
+    8,
+    1.0
+   ],
+   [
+    1,
+    9,
+    1.0
+   ],
+   [
+    1,
+    10,
+    1.0
+   ],
+   [
+    1,
+    11,
+    1.0
+   ],
+   [
+    2,
+    8,
+    1.0
+   ],
+   [
+    2,
+    9,
+    1.0
+   ],
+   [
+    2,
+    10,
+    1.0
+   ],
+   [
+    2,
+    11,
+    1.0
+   ],
+   [
+    3,
+    8,
+    1.0
+   ],
+   [
+    3,
+    9,
+    1.0
+   ],
+   [
+    3,
+    10,
+    1.0
+   ],
+   [
+    3,
+    11,
+    1.0
+   ],
+   [
+    4,
+    12,
+    1.0
+   ],
+   [
+    4,
+    13,
+    1.0
+   ],
+   [
+    4,
+    14,
+    1.0
+   ],
+   [
+    4,
+    15,
+    1.0
+   ],
+   [
+    5,
+    12,
+    1.0
+   ],
+   [
+    5,
+    13,
+    1.0
+   ],
+   [
+    5,
+    14,
+    1.0
+   ],
+   [
+    5,
+    15,
+    1.0
+   ],
+   [
+    6,
+    12,
+    1.0
+   ],
+   [
+    6,
+    13,
+    1.0
+   ],
+   [
+    6,
+    14,
+    1.0
+   ],
+   [
+    6,
+    15,
+    1.0
+   ],
+   [
+    7,
+    12,
+    1.0
+   ],
+   [
+    7,
+    13,
+    1.0
+   ],
+   [
+    7,
+    14,
+    1.0
+   ],
+   [
+    7,
+    15,
+    1.0
+   ],
+   [
+    0,
+    13,
+    0.3
+   ]
+  ],
+  "meta": {
+   "0": 0,
+   "1": 0,
+   "2": 0,
+   "3": 0,
+   "4": 1,
+   "5": 1,
+   "6": 1,
+   "7": 1,
+   "8": 0,
+   "9": 0,
+   "10": 0,
+   "11": 0,
+   "12": 1,
+   "13": 1,
+   "14": 1,
+   "15": 1
+  }
+ },
+ "expected": {
+  "codelength": 2.152074949592183,
+  "oneLevelCodelength": 3.9995100117336846,
+  "relativeCodelengthSavings": 0.46191534881061247,
+  "numLevels": 2,
+  "numTopModules": 2,
+  "numLeafModules": 2,
+  "nodes": [
+   {
+    "id": 0,
+    "path": [
+     1,
+     1
+    ],
+    "flow": 0.13312693498452013
+   },
+   {
+    "id": 1,
+    "path": [
+     1,
+     2
+    ],
+    "flow": 0.1238390092879257
+   },
+   {
+    "id": 2,
+    "path": [
+     1,
+     3
+    ],
+    "flow": 0.1238390092879257
+   },
+   {
+    "id": 3,
+    "path": [
+     1,
+     4
+    ],
+    "flow": 0.1238390092879257
+   },
+   {
+    "id": 8,
+    "path": [
+     1,
+     5
+    ],
+    "flow": 0.0
+   },
+   {
+    "id": 9,
+    "path": [
+     1,
+     6
+    ],
+    "flow": 0.0
+   },
+   {
+    "id": 10,
+    "path": [
+     1,
+     7
+    ],
+    "flow": 0.0
+   },
+   {
+    "id": 11,
+    "path": [
+     1,
+     8
+    ],
+    "flow": 0.0
+   },
+   {
+    "id": 4,
+    "path": [
+     2,
+     1
+    ],
+    "flow": 0.1238390092879257
+   },
+   {
+    "id": 5,
+    "path": [
+     2,
+     2
+    ],
+    "flow": 0.1238390092879257
+   },
+   {
+    "id": 6,
+    "path": [
+     2,
+     3
+    ],
+    "flow": 0.1238390092879257
+   },
+   {
+    "id": 7,
+    "path": [
+     2,
+     4
+    ],
+    "flow": 0.1238390092879257
+   },
+   {
+    "id": 12,
+    "path": [
+     2,
+     5
+    ],
+    "flow": 0.0
+   },
+   {
+    "id": 13,
+    "path": [
+     2,
+     6
+    ],
+    "flow": 0.0
+   },
+   {
+    "id": 14,
+    "path": [
+     2,
+     7
+    ],
+    "flow": 0.0
+   },
+   {
+    "id": 15,
+    "path": [
+     2,
+     8
+    ],
+    "flow": 0.0
+   }
+  ],
+  "modules": [
+   {
+    "path": [
+     1
+    ],
+    "flow": 0.5046439628482973,
+    "enterFlow": 0.009287925696594479,
+    "exitFlow": 0.009287925696594479,
+    "childCount": 8
+   },
+   {
+    "path": [
+     2
+    ],
+    "flow": 0.4953560371517028,
+    "enterFlow": 0.009287925696594479,
+    "exitFlow": 0.009287925696594479,
+    "childCount": 8
+   }
+  ]
+ }
+}

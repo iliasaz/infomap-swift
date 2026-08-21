@@ -1,0 +1,3 @@
+[submodule "vendor/infomap"]
+	path = vendor/infomap
+	url = https://github.com/iliasaz/infomap.git

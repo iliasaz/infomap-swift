@@ -36,7 +36,11 @@ public struct Partition: Sendable, Codable, Equatable {
     /// binding that drops them is useless to the consumers.
     public struct Module: Sendable, Codable, Equatable {
         public var path: ModulePath
-        /// Codebook use rate `p_m^↻` (module flow including exit).
+        /// Aggregate module flow: the sum of the visit rates of the nodes it
+        /// contains at any depth — the tree-file flow column, exactly as the
+        /// engine reports it. The codebook use rate `p_m^↻` (member/child
+        /// rates plus exit) is derived from these fields by
+        /// ``PartitionAnalysis``, not stored.
         public var flow: Double
         /// Module entry rate `q_m↷`.
         public var enterFlow: Double
