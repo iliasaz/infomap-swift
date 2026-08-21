@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  macos:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # vendor/infomap: the pinned iliasaz/infomap core the CInfomap
+          # target compiles.
+          submodules: recursive
+      - name: Build and test
+        run: |
+          swift build
+          swift test
+
+  linux:
+    runs-on: ubuntu-24.04
+    container: swift:6.3-noble
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Build and test
+        run: |
+          swift build
+          swift test
