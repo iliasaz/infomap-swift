@@ -34,17 +34,16 @@ import Testing
         #expect(options.markovTime == 1.0)
     }
 
-    @Test func regularizedBipartiteIsRefused() async {
-        // The iliasaz/infomap#1 guard is part of the contract from day one.
+    @Test func regularizedBipartiteIsAccepted() {
+        // The day-one iliasaz/infomap#1 guard is lifted: the vendored pin
+        // (0853262c) carries the fix, so the combination now passes
+        // validation. Behavioral regressions against the bug's failure
+        // modes live in RegularizedBipartiteTests.
         var options = InfomapOptions()
         options.regularization = .bayesianDefault
-        await #expect(throws: InfomapError.self) {
-            try await InfomapEngine.shared.run(toyNetwork(), options: options)
-        }
-        #expect(throws: InfomapError.self) {
+        #expect(throws: Never.self) {
             try InfomapEngine.validate(network: toyNetwork(), options: options)
         }
-        // The same options without the bipartite declaration pass validation.
         #expect(throws: Never.self) {
             try InfomapEngine.validate(network: toyNetwork(bipartite: false), options: options)
         }

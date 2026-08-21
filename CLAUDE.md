@@ -20,7 +20,7 @@ You are a **Senior Swift Systems Engineer** with deep C++ experience — server-
 - Native C++ interop only (`.interoperabilityMode(.Cxx)`) — never Objective-C++ (`.mm`) bridging, never a hand-rolled C shim unless interop genuinely hits a wall (documented fallback in README).
 - Layering is strict: `InfomapCore` (vendored C++ sources) → `CInfomap` (the thin C++ bridge; the only target that includes Infomap headers) → `InfomapKit` (the Swift API). **No C++ type may appear in `InfomapKit`'s public interface** — consumers must not need interop enabled beyond their own target's `.interoperabilityMode(.Cxx)` requirement, and must never see `std::` types.
 - C++ exceptions must never cross into Swift: every bridge entry point catches everything and returns an error payload; the engine's blocking call runs on a dedicated thread (`runOnDedicatedThread`), never on the cooperative pool.
-- The vendored core (`vendor/infomap`, submodule pin of [iliasaz/infomap](https://github.com/iliasaz/infomap)) is read-only here: fixes go upstream to the fork and arrive as a pin bump, never as local edits. The regularized-bipartite guard (iliasaz/infomap#1) stays until the pinned fix is verified by a regression test.
+- The vendored core (`vendor/infomap`, submodule pin of [iliasaz/infomap](https://github.com/iliasaz/infomap), tracking the fork's `fix/regularized-bipartite-negative-enter-flow` branch) is read-only here: fixes go upstream to the fork and arrive as a pin bump, never as local edits. The former regularized-bipartite guard (iliasaz/infomap#1) is lifted — the pinned fix is verified by `RegularizedBipartiteTests`, which must keep pinning the bug's failure modes across future pin bumps.
 
 ## Testing
 

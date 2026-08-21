@@ -417,9 +417,12 @@ public struct StrengthSweep: Sendable {
         /// structure; transient mid-sweep one-module points don't count.
         public var collapseStrength: Double?
         /// True when the input network carried a bipartite declaration that
-        /// the sweep stripped (iliasaz/infomap#1 — regularized runs use the
-        /// unipartite prior, conservatively, matching the validation
-        /// experiment's method).
+        /// the sweep stripped. The strip is methodological: it matches the
+        /// validation experiment's unipartite-prior protocol, keeping
+        /// plateau and collapse points comparable to its baselines. (It
+        /// began as the iliasaz/infomap#1 workaround; the engine itself now
+        /// supports regularized bipartite runs — loop it directly to sweep
+        /// under the bipartite prior.)
         public var strippedBipartiteDeclaration: Bool
 
         public init(
@@ -435,10 +438,12 @@ public struct StrengthSweep: Sendable {
         }
     }
 
-    /// Runs the sweep, ascending in strength. Per iliasaz/infomap#1,
-    /// regularized runs must not carry a bipartite declaration —
-    /// the sweep strips it (unipartite prior, conservative) and records that
-    /// in the result, matching the validation experiment's method.
+    /// Runs the sweep, ascending in strength, on the unipartite view of the
+    /// network: a bipartite declaration is stripped (and recorded in the
+    /// result) so plateau/collapse points stay comparable to the validation
+    /// experiment's unipartite-prior baselines. The engine itself supports
+    /// regularized bipartite runs (iliasaz/infomap#1 is fixed in the
+    /// vendored pin) — call it directly to sweep under the bipartite prior.
     public static func run(
         network: FlowNetwork,
         options: InfomapOptions,
