@@ -20,7 +20,7 @@ public enum InfomapError: Error, Sendable, Equatable {
     case engineFailure(message: String)
 }
 
-/// The one operation consumers depend on. Kept as a protocol so mnemosis
+/// The one operation consumers depend on. Kept as a protocol so consumer
 /// tests can substitute a fixture engine (golden partitions from the Python
 /// reference implementation) without linking the C++ core.
 public protocol InfomapRunning: Sendable {
@@ -29,8 +29,8 @@ public protocol InfomapRunning: Sendable {
     /// Implementation contract:
     /// - The C++ call is blocking; it must run off the Swift cooperative
     ///   pool. The core offers no cancellation hook — an in-flight run is
-    ///   non-abortable, so size inputs accordingly (the 369K-link validation
-    ///   corpus ran in ~40 s). Cancellation is honored at the safe point
+    ///   non-abortable, so size inputs accordingly (networks with
+    ///   hundreds of thousands of links can take tens of seconds). Cancellation is honored at the safe point
     ///   before the run starts: a run requested from an already-cancelled
     ///   task throws `CancellationError` instead of doing dead work.
     /// - Equal `(network, options)` including seed ⇒ identical `Partition`

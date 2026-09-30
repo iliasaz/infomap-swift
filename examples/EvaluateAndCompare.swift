@@ -1,6 +1,6 @@
 // Comparing partitions and covers: multi-seed agreement (NMI), rebuild
 // regression (membership diff), and cover agreement against a permutation
-// null — the Gate-G5 statistic. Upstream analog:
+// null (z-score). Upstream analog:
 // examples/python/evaluate-partition.py.
 
 import Foundation
@@ -27,7 +27,7 @@ func evaluateAndCompare() async throws {
     print("NMI(seed 42, seed 7) at leaf level:",
           String(format: "%.4f", PartitionAnalysis.nmi(seedA, seedB)))
 
-    // Rebuild regression: an unchanged corpus must produce an empty diff.
+    // Rebuild regression: an unchanged network must produce an empty diff.
     let rebuilt = try await InfomapEngine.shared.run(network, options: InfomapOptions(seed: 42, trials: 20))
     let diff = PartitionAnalysis.membershipDiff(seedA, rebuilt)
     print("rebuild diff empty: \(diff.isEmpty) (stable nodes: \(diff.stableCount))")

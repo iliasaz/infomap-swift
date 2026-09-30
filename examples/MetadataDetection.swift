@@ -37,5 +37,5 @@ func metadataDetection() async throws {
     // `oneLevelCodelength` includes the one-level metadata entropy, so
     // relative savings from a metadata run are not comparable to a plain run.
     print("codelength \(String(format: "%.4f", partition.codelength)) bits",
-          "(module-label entropy is the Gate-G5 secondary metric)")
+          "(excludes the metadata codebook)")
 }

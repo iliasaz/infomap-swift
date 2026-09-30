@@ -1,7 +1,7 @@
-// The sparse-graph honesty protocol (map-equation-basins experiment §5.4):
-// never gate on default-strength regularized savings — sweep the Bayesian
-// regularization strength and report the plateau and the collapse point
-// (the corpus's density margin).
+// The sparse-graph honesty protocol: never judge structure by
+// default-strength regularized savings — sweep the Bayesian regularization
+// strength and report the plateau and the collapse point (the network's
+// density margin).
 
 import Foundation
 import InfomapKit
@@ -35,7 +35,7 @@ func strengthSweepProtocol() async throws {
         print("plateau: none — no structured regime in the swept range")
     }
     if let collapse = result.collapseStrength {
-        print("collapse point: strength \(collapse) (density margin of this corpus)")
+        print("collapse point: strength \(collapse) (density margin of this network)")
     } else {
         print("collapse point: none within the swept range")
     }

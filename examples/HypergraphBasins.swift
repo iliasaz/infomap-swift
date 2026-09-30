@@ -1,5 +1,5 @@
-// Bipartite hyperedge-incidence detection — the primary consumer pattern
-// (mnemosis P5 / noema P2.3): hyperedges (episodes) as primary nodes,
+// Bipartite hyperedge-incidence detection — the primary use case:
+// hyperedges (episodes) as primary nodes,
 // entities as feature nodes, hub-penalized incidence weights, then
 // partition-analysis on the result (mapsim tunneling costs, centrality).
 // Upstream analog: examples/python/bipartite.py.
@@ -11,7 +11,7 @@ func hypergraphBasins() async throws {
     section("Hypergraph basins: bipartite incidence + analysis")
 
     // Episodes 0...5, entities 100... (bipartiteStartID = 100 must itself be
-    // a linked feature node). Two workstreams; episode 2 bridges them.
+    // a linked feature node). Two clusters; episode 2 bridges them.
     let incidences: [(episode: Int, entity: Int)] = [
         (0, 100), (0, 101), (0, 102),
         (1, 100), (1, 101),

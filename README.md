@@ -6,12 +6,7 @@ Swift bindings for the [Infomap](https://github.com/mapequation/infomap) C++ cor
 
 ## Why this exists
 
-Two private projects need map-equation basins as a library, not a CLI:
-
-- **mnemosis** Phase 5 (field layer): multilevel basin detection over the episode transition tensor, nested-partition serving (the funnel), separatrix/tunneling costs, partition-stability regression (Gate G2r extension), Gate G5 cover-agreement metrics.
-- **noema** Stage P2.3–P2.4: basin detection as the primary substrate-field operation, `Φ` derived from the nested partition + flow rates, mapsim as the tunneling cost.
-
-Both were validated empirically in `noema/experiments/map-equation-basins/` (2026-08-20) using the Python package; this repo is the production path for the Swift stack.
+Swift server and on-device stacks that need map-equation community detection have had no native option: the Python package and the CLI are the only mainstream entry points. This package exposes Infomap as a Swift library — multilevel basin detection over (hyper)graphs, nested-partition access with per-module flow rates, mapsim tunneling costs, map-equation centrality, and partition-stability / cover-agreement metrics — without a Python runtime or subprocess.
 
 ## Binding strategy
 
@@ -63,12 +58,12 @@ Runnable, commented examples live in [`examples/`](examples/) — simple detecti
 swift run infomap-example
 ```
 
-## Conventions (inherited from mnemosis)
+## Conventions
 
 - Swift 6.3+, strict concurrency, **macOS 26+ and Linux (Ubuntu 24.04)**; CI must run both.
 - The engine call is blocking C++ — it runs off the cooperative pool behind an `async` surface. All result types are `Sendable` value types.
 - No force unwraps; typed errors. `swift-log` for any diagnostics; never `print()`.
-- Tests: Swift Testing (`@Test`/`#expect`). Golden-partition fixtures come from the Python reference implementation on synthetic networks (a planted-8-group generator built to the map-equation-basins experiment's method) so the bindings are verified against the reference, not against themselves.
+- Tests: Swift Testing (`@Test`/`#expect`). Golden-partition fixtures come from the Python reference implementation on synthetic networks (a seeded planted-8-group hyperedge-incidence generator) so the bindings are verified against the reference, not against themselves.
 - Determinism: equal `(network, options)` including seed reproduces bit-identical partitions on a given platform/build. Across platforms, low trial counts can settle in different near-tie local optima (observed on the two-level planted-8 fixture at 10 trials: macOS and Linux picked different flat solutions) — fixtures pin trial counts high enough that every platform reaches the settled optimum.
 
 ## The interface, in one look
@@ -83,7 +78,7 @@ options.regularization = .off                            // or .bayesian(strengt
 
 let partition = try await InfomapEngine.shared.run(network, options: options)
 
-partition.relativeCodelengthSavings                      // substrate-quality scalar
+partition.relativeCodelengthSavings                      // partition-quality scalar
 partition.leafModule(of: 17)                             // node → leaf basin
 partition.path(of: 17)                                   // node → nested module path
 partition.module(at: path)?.enterFlow                    // q_m↷ — separatrix ingredients
@@ -97,16 +92,16 @@ PartitionAnalysis.membershipDiff(partition, rebuilt)     // G2r alluvial regress
 
 See the doc comments in `Sources/InfomapKit/` — they are the specification, including semantics, units, and the paper-equation cross-references.
 
-## What the consumers require (the contract behind the API)
+## What the API provides (the contract)
 
 1. **Network construction**: weighted directed/undirected links over integer node IDs; bipartite start ID for hyperedge-incidence networks; per-link weights carry hyperedge-dependent node weights `γ_e(v)` (paper Eqs. 29–30).
-2. **Detection options**: seed, trial count, two-level vs multilevel, flow model, Bayesian regularization with strength (paper §7), Markov time + variable Markov time (paper §3.3), per-node categorical metadata for the content map equation (paper §6.1 — Gate G5).
-3. **Partition results**: codelength / one-level codelength / relative savings; the full nested module tree with **per-module flow, enter flow, and exit flow at every level** (`p_m^↻`, `q_m↷`, `q_m↶` — required for separatrix costs, `Φ` derivation, and mapsim); per-node leaf/top/at-depth assignment and full path. `Codable`, so a partition can persist as substrate state (SQLite).
-4. **Derived analysis** (pure Swift over the partition — the core does not export these): mapsim and mapsim distance (paper §9.2, asymmetric, defined for unlinked pairs); map-equation centrality (paper §9.1, Eq. 50); NMI + permutation-null z (Gate G5 metric as validated at z = 40 in the experiment); membership diff between two partitions (the G2r alluvial regression artifact); regularization-strength sweep with plateau/collapse-point extraction (the sparse-graph honesty protocol — default-strength savings is *not* a valid gate metric, see the experiment §5.4).
+2. **Detection options**: seed, trial count, two-level vs multilevel, flow model, Bayesian regularization with strength (paper §7), Markov time + variable Markov time (paper §3.3), per-node categorical metadata for the content map equation (paper §6.1).
+3. **Partition results**: codelength / one-level codelength / relative savings; the full nested module tree with **per-module flow, enter flow, and exit flow at every level** (`p_m^↻`, `q_m↷`, `q_m↶` — required for separatrix costs, `Φ` derivation, and mapsim); per-node leaf/top/at-depth assignment and full path. `Codable`, so a partition can persist as state (e.g. SQLite).
+4. **Derived analysis** (pure Swift over the partition — the core does not export these): mapsim and mapsim distance (paper §9.2, asymmetric, defined for unlinked pairs); map-equation centrality (paper §9.1, Eq. 50); NMI + permutation-null z (cover agreement); membership diff between two partitions (an alluvial-style stability regression artifact); regularization-strength sweep with plateau/collapse-point extraction (the sparse-graph honesty protocol — default-strength savings is *not* a valid structure metric on sparse graphs).
 
 ## Upstream bug, fixed in the vendored pin
 
-Infomap 2.15.1 `--regularized` combined with a bipartite node-type declaration either aborts ("Negative enter flow on a module…") or **silently returns a degenerate over-fragmented partition** — documented with synthetic repro in [iliasaz/infomap#1](https://github.com/iliasaz/infomap/issues/1). The vendored pin now tracks the fork's `fix/regularized-bipartite-negative-enter-flow` branch (`0853262c`: regularized flow computed on the bipartite primary projection), so the engine's original guard is lifted and the combination is supported. `RegularizedBipartiteTests` pins the two failure modes (abort-class small networks, degeneracy-class larger ones); the pip reference implementation still carries the bug, so that coverage is property-based rather than golden parity. `StrengthSweep` accordingly runs networks **as given**, bipartite declarations included — the map-equation-basins experiment's pre-registered method, which its §5.4 amendment had to abandon because of this bug. One re-baselining caveat: the experiment's *recorded* plateau/collapse numbers were measured under the amendment's unipartite prior, and the fixed core prices the prior over the bipartite primary projection (`λ = ln N_L / N_L`), so sweeps over bipartite networks are not comparable to those recorded values — re-measure before using them as gate baselines.
+Infomap 2.15.1 `--regularized` combined with a bipartite node-type declaration either aborts ("Negative enter flow on a module…") or **silently returns a degenerate over-fragmented partition** — documented with synthetic repro in [iliasaz/infomap#1](https://github.com/iliasaz/infomap/issues/1). The vendored pin now tracks the fork's `fix/regularized-bipartite-negative-enter-flow` branch (`0853262c`: regularized flow computed on the bipartite primary projection), so the engine's original guard is lifted and the combination is supported. `RegularizedBipartiteTests` pins the two failure modes (abort-class small networks, degeneracy-class larger ones); the pip reference implementation still carries the bug, so that coverage is property-based rather than golden parity. `StrengthSweep` accordingly runs networks **as given**, bipartite declarations included. One re-baselining caveat: the fixed core prices the prior over the bipartite primary projection (`λ = ln N_L / N_L`), so plateau/collapse numbers measured with the bipartite declaration stripped (a unipartite prior) are not comparable — re-measure rather than reuse them.
 
 ## Roadmap
 
@@ -115,4 +110,10 @@ Infomap 2.15.1 `--regularized` combined with a bipartite node-type declaration e
 3. ✅ `InfomapEngine` over the core; golden-partition parity vs the Python reference (codelengths, flows, and structure to 1e-9 on both platforms).
 4. ✅ `PartitionAnalysis` (pure Swift; validated against hand-computed values).
 5. ✅ CI (macOS 26 runner + `swift:6.3-noble` container).
-6. Adopt from mnemosis Phase 5 / noema P2.3.
+6. Downstream adoption.
+
+## License
+
+The code in this repository is MIT-licensed — see [LICENSE](LICENSE).
+
+**The Infomap core is not.** `vendor/infomap` (a submodule of [iliasaz/infomap](https://github.com/iliasaz/infomap), a fork of [mapequation/infomap](https://github.com/mapequation/infomap)) is GPL-3.0-or-later, and the `InfomapCore` target compiles it into every binary that links InfomapKit. Any binary you *distribute* that links this package is therefore a combined work subject to the GPL-3.0's terms. Using it without distributing a binary (e.g. server-side) does not trigger those terms.
