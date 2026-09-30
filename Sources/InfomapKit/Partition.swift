@@ -1,8 +1,8 @@
 /// The result of a detection run: the nested module tree with per-module flow
 /// rates, per-node assignments and visit rates, and the codelength statistics.
 ///
-/// This is the object mnemosis persists as substrate state (it is `Codable`
-/// for that reason) and the sole input to ``PartitionAnalysis`` — everything
+/// This is the object consumers persist as state (it is `Codable` for that
+/// reason) and the sole input to ``PartitionAnalysis`` — everything
 /// downstream (mapsim, centrality, Φ derivation, stability diffs) is a pure
 /// function of a `Partition`, never a second engine call.
 public struct Partition: Sendable, Codable, Equatable {
@@ -78,7 +78,7 @@ public struct Partition: Sendable, Codable, Equatable {
     /// Codelength of the one-module partition — the no-structure baseline.
     public var oneLevelCodelength: Double
     /// `1 − codelength / oneLevelCodelength`: the query-independent
-    /// substrate-quality scalar (noema §17.1).
+    /// partition-quality scalar.
     public var relativeCodelengthSavings: Double
 
     // MARK: Shape

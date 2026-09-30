@@ -71,8 +71,7 @@ import Testing
     }
 
     @Test func sweepRunsBipartiteNetworksAsGiven() async throws {
-        // The sweep no longer strips the bipartite declaration — the
-        // map-equation-basins experiment's pre-registered method, possible
+        // The sweep no longer strips the bipartite declaration — possible
         // now that the pin carries the fix. End-to-end through the real
         // engine on the bipartite toy: structure survives both strengths
         // (observed: 2 top modules at 0.3 and 1.0 on macOS and Linux).

@@ -168,8 +168,8 @@ import Testing
         /// strength → (topModules, leafModules, savings)
         let table: [Double: (Int, Int, Double)]
         /// The sweep must hand the network through unchanged — including a
-        /// bipartite declaration (the pre-registered method; the former
-        /// iliasaz/infomap#1 strip is gone).
+        /// bipartite declaration (the former iliasaz/infomap#1 strip is
+        /// gone).
         var expectedBipartiteStartID: Int? = nil
 
         func run(_ network: FlowNetwork, options: InfomapOptions) async throws -> Partition {

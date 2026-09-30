@@ -5,8 +5,8 @@ import Foundation
 /// a deterministic function of the partition (and, where stated, a cover
 /// labeling); no engine calls.
 ///
-/// Numeric conventions: NMI follows the map-equation-basins experiment's
-/// reference implementation (natural-log mutual information, arithmetic-mean
+/// Numeric conventions: NMI follows the Python reference implementation
+/// (natural-log mutual information, arithmetic-mean
 /// normalization, shared nodes only); permutation nulls use sample (n−1)
 /// standard deviation and a SplitMix64 shuffle so results are reproducible
 /// across platforms (Swift and Python nulls agree statistically, not bitwise).
@@ -56,7 +56,7 @@ public struct PartitionAnalysis: Sendable {
     /// containing both nodes, times the rate at which that module's index
     /// level reaches and visits `v`. Asymmetric, and defined for node pairs
     /// with **no observed link** — which is exactly the cross-basin
-    /// "tunneling" case (noema §17.3).
+    /// "tunneling" case.
     ///
     /// Concretely: ascending steps out of module `m` contribute
     /// `q_m↶ / p_m^↻`, descending steps into module `c` from its parent
@@ -104,8 +104,7 @@ public struct PartitionAnalysis: Sendable {
     }
 
     /// `d(u, v) = −log₂ mapsim(u, v, M)` in bits — the separatrix-crossing /
-    /// tunneling cost used by the walk layer (noema P2.4) and cross-workstream
-    /// serving (mnemosis P5). `+∞` when the walker cannot reach `v` at all
+    /// tunneling cost between basins. `+∞` when the walker cannot reach `v` at all
     /// (zero rate or unknown node).
     public func mapsimDistance(from source: Int, to target: Int) -> Double {
         let similarity = mapsim(from: source, to: target)
@@ -120,7 +119,7 @@ public struct PartitionAnalysis: Sendable {
     /// `λ(M, u) = −(p_m^↻ − p_u) · log₂((p_m^↻ − p_u) / p_m^↻)`,
     /// with `p_m^↻` the use rate of the node's leaf-module codebook.
     /// Community-aware importance — distinguishes bridges from hubs; a
-    /// candidate serving-rank feature (mnemosis P5). 0 for unknown nodes.
+    /// candidate ranking feature. 0 for unknown nodes.
     public func centrality(of node: Int) -> Double {
         guard
             let leaf = partition.nodePaths[node],
@@ -171,7 +170,7 @@ public struct PartitionAnalysis: Sendable {
     /// nodes. Used for solution-landscape checks (multi-seed agreement)
     /// and cross-method comparisons.
     ///
-    /// Reference-implementation semantics (map-equation-basins experiment):
+    /// Reference-implementation semantics:
     /// natural-log MI normalized by the arithmetic mean of the two label
     /// entropies; 0 when there are no shared nodes or both labelings are
     /// trivial (zero entropy).
@@ -181,13 +180,11 @@ public struct PartitionAnalysis: Sendable {
         nmi(labels(of: a, at: depth), labels(of: b, at: depth))
     }
 
-    /// The Gate-G5 cover-agreement metric as validated in the
-    /// map-equation-basins experiment (z = 40 on the site-design store):
-    /// NMI between the partition (at `depth`) and an external cover labeling,
+    /// Cover-agreement metric: NMI between the partition (at `depth`) and an external cover labeling,
     /// against an empirical null from `permutations` random relabelings.
     ///
-    /// The z-score — not raw NMI — is the gate statistic: fine partitions
-    /// inflate chance NMI (null mean was 0.57 on the validation corpus).
+    /// The z-score — not raw NMI — is the statistic to report: fine
+    /// partitions inflate chance NMI, so raw NMI alone overstates agreement.
     /// The null shuffle is a seeded SplitMix64 Fisher–Yates, bit-reproducible
     /// across runs and platforms; std is the sample (n−1) deviation and
     /// `z = +∞` when the null is degenerate (std 0), matching the reference.
@@ -244,10 +241,9 @@ public struct PartitionAnalysis: Sendable {
         }
     }
 
-    /// Node-level membership diff between two partitions of the same corpus —
-    /// the alluvial-style regression artifact that extends Gate G2r into the
-    /// field layer: an unchanged-corpus rebuild must produce an **empty**
-    /// diff; a one-row change must perturb one basin's membership, visibly.
+    /// Node-level membership diff between two partitions of the same network —
+    /// an alluvial-style partition-stability regression artifact: an
+    /// unchanged-network rebuild must produce an **empty** diff; a one-row change must perturb one basin's membership, visibly.
     public static func membershipDiff(_ old: Partition, _ new: Partition) -> MembershipDiff {
         var moved: [Int: MembershipDiff.Move] = [:]
         var onlyInOld: Set<Int> = []
@@ -384,11 +380,11 @@ extension [AnyHashable: Int] {
     }
 }
 
-/// The sparse-graph honesty protocol (map-equation-basins experiment §5.4;
-/// mnemosis P5): sweep the Bayesian regularization strength, report the
-/// plateau partition and the collapse point. Default-strength regularized
-/// savings is **never** a gate metric — it nulls out on graphs sparser than
-/// the prior's ER-connectivity assumption, which both validation corpora were.
+/// The sparse-graph honesty protocol: sweep the Bayesian regularization
+/// strength, report the plateau partition and the collapse point.
+/// Default-strength regularized savings is **never** a valid structure metric
+/// on its own — it nulls out on graphs sparser than the prior's
+/// ER-connectivity assumption, which many real-world networks are.
 public struct StrengthSweep: Sendable {
     public struct Point: Sendable, Codable, Equatable {
         public var strength: Double
@@ -413,7 +409,7 @@ public struct StrengthSweep: Sendable {
         public var plateauModuleCount: Int?
         /// Smallest swept strength at which the partition collapses to one
         /// module *and stays collapsed* through the rest of the swept range
-        /// — the corpus's density margin. `nil` if the sweep ends with
+        /// — the network's density margin. `nil` if the sweep ends with
         /// structure; transient mid-sweep one-module points don't count.
         public var collapseStrength: Double?
         public init(
@@ -428,13 +424,11 @@ public struct StrengthSweep: Sendable {
     }
 
     /// Runs the sweep, ascending in strength, on the network **as given** —
-    /// including a bipartite declaration, which is the map-equation-basins
-    /// experiment's pre-registered method (its §5.4 amendment stripped the
-    /// declaration only because of iliasaz/infomap#1, fixed in the vendored
-    /// pin; the fixed core prices the prior over the bipartite primary
-    /// projection). When comparing against plateau/collapse numbers
-    /// recorded under that amendment's unipartite prior, re-baseline —
-    /// the two priors differ.
+    /// including a bipartite declaration (supported since the vendored pin
+    /// carries the iliasaz/infomap#1 fix; the fixed core prices the prior
+    /// over the bipartite primary projection). Plateau/collapse numbers
+    /// measured with the bipartite declaration stripped (a unipartite prior)
+    /// are not comparable — the two priors differ.
     public static func run(
         network: FlowNetwork,
         options: InfomapOptions,

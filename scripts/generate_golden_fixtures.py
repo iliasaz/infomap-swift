@@ -20,14 +20,12 @@ Networks
 * **toy** — the 16-node bipartite toy from ``SpecStageTests.toyNetwork()``:
   episodes 0..3 x entities 8..11, episodes 4..7 x entities 12..15 (weight 1),
   plus one cross link 0->13 (weight 0.3); ``bipartiteStartId`` 8.
-* **planted8** — a planted-partition hyperedge-incidence network in the style
-  of ``noema/experiments/map-equation-basins`` §3 (that experiment used real
-  corpora; no synthetic generator existed there, so this one is designed to
-  its method section): bipartite episodes x entities, 8 planted groups, each
+* **planted8** — a planted-partition hyperedge-incidence network: bipartite
+  episodes x entities, 8 planted groups, each
   group split into 2 planted sub-communities (so multilevel recovery is a
   genuine 3-level hierarchy: 8 top modules x 2 submodules), a within-group
   glue incidence per sub-community and a ring of 8 cross-group bridge
-  incidences for connectivity, link weight = the experiment's hub penalty
+  incidences for connectivity, link weight = a hub penalty
   ``1/log2(1 + deg(entity))`` with ``deg`` computed deterministically over
   the finished incidence list. Membership sampling uses seeded stdlib
   ``random.Random(42)`` — no numpy.
